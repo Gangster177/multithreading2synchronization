@@ -1,13 +1,12 @@
 package homework;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class MainTask1 {
     public static final char SYMBOL = 'R';
     //TODO Количество потоков равно количеству генерируемых маршрутов и равно 1000
     public static final int ROUTE = 10;
+    public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
     public static void main(String[] args) throws InterruptedException {
         List<Thread> list = new ArrayList<>();
@@ -17,23 +16,41 @@ public class MainTask1 {
         }
         for (String route : routes) {
             Runnable runnable = () -> {
+
                 int count = 0;
                 for (int j = 0; j < route.length(); j++) {
                     if (route.charAt(j) == SYMBOL) {
                         count++;
                     }
                 }
-                System.out.println("Самое частое количество повторений " + count);
+                synchronized (sizeToFreq) {
+                    if (sizeToFreq.containsKey(count)) {
+                        sizeToFreq.put(count, sizeToFreq.get(count) + 1);
+                    } else {
+                        sizeToFreq.put(count, 1);
+                    }
+                }
+                //System.out.println("Самое частое количество повторений " + count);
             };
-            list.add(new Thread(runnable));
-        }
-        for (Thread thread : list) {
+            Thread thread = new Thread(runnable);
             thread.start();
+            list.add(thread);
         }
         for (Thread thread : list) {
-            thread.join(); // зависаем, ждём когда поток, объект которого лежит в thread, завершится
+            thread.join();
+        }
+        Map.Entry<Integer, Integer> maxEntry = sizeToFreq.entrySet().stream()
+                .max(Comparator.comparing(Map.Entry::getValue))
+                .orElse(null);
+        System.out.printf("Самое частое количество повторений %d (встретилось %d раз) \n", maxEntry.getKey(), maxEntry.getValue());
+        System.out.println("Другие размеры:");
+        if (!maxEntry.equals(sizeToFreq)) {
+            sizeToFreq.entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue((a, b) -> b - a))
+                    .forEach(e -> System.out.printf("- %d (%d раз)\n", e.getKey(), e.getValue()));
         }
     }
+
 
     public static String generateRoute(String letters, int length) {
         Random random = new Random();
