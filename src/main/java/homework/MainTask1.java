@@ -13,6 +13,20 @@ public class MainTask1 {
         for (int i = 0; i < ROUTE; i++) {
             routes[i] = generateRoute("RLRFR", 100);
         }
+//        new Thread(() -> {
+//            for (int i = 0; i < 10; i++) {
+//                synchronized (names) {
+//                    if (names.isEmpty()) {
+//                        try {
+//                            names.wait();
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                    System.out.println("Обслужили покупателя " + names.remove(0));
+//                }
+//            }
+//        }).start();
         for (String route : routes) {
             Runnable runnable = () -> {
                 int count = 0;
