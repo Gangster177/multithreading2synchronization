@@ -13,20 +13,25 @@ public class MainTask1 {
         for (int i = 0; i < ROUTE; i++) {
             routes[i] = generateRoute("RLRFR", 100);
         }
-//        new Thread(() -> {
-//            for (int i = 0; i < 10; i++) {
-//                synchronized (names) {
-//                    if (names.isEmpty()) {
-//                        try {
-//                            names.wait();
-//                        } catch (InterruptedException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                    System.out.println("Обслужили покупателя " + names.remove(0));
-//                }
-//            }
-//        }).start();
+
+        Thread printMax = new Thread(() -> {
+            while (!Thread.interrupted()) {
+                synchronized (sizeToFreq) {
+                    if (sizeToFreq.isEmpty()) {
+                        try {
+                            sizeToFreq.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    Map.Entry<Integer, Integer> maxEntry = sizeToFreq.entrySet().stream()
+                            .max(Comparator.comparing(Map.Entry::getValue))
+                            .orElse(null);
+                    System.out.printf("Самое частое количество повторений %d (встретилось %d раз) \n", maxEntry.getKey(), maxEntry.getValue());
+                }
+            }
+        });
+        printMax.start();
         for (String route : routes) {
             Runnable runnable = () -> {
                 int count = 0;
@@ -41,6 +46,7 @@ public class MainTask1 {
                     } else {
                         sizeToFreq.put(count, 1);
                     }
+                    sizeToFreq.notify();
                 }
             };
             Thread thread = new Thread(runnable);
@@ -50,7 +56,8 @@ public class MainTask1 {
         for (Thread thread : list) {
             thread.join();
         }
-        printMessage();
+        printMax.interrupt();
+        System.out.println("This program finished!");
     }
 
     public static String generateRoute(String letters, int length) {
@@ -60,19 +67,5 @@ public class MainTask1 {
             route.append(letters.charAt(random.nextInt(letters.length())));
         }
         return route.toString();
-    }
-
-    public static void printMessage() {
-        Map.Entry<Integer, Integer> maxEntry = sizeToFreq.entrySet().stream()
-                .max(Comparator.comparing(Map.Entry::getValue))
-                .orElse(null);
-        System.out.printf("Самое частое количество повторений %d (встретилось %d раз) \n", maxEntry.getKey(), maxEntry.getValue());
-        sizeToFreq.remove(maxEntry.getKey());
-        System.out.println("Другие размеры:");
-        if (!maxEntry.equals(sizeToFreq)) {
-            sizeToFreq.entrySet().stream()
-                    .sorted(Map.Entry.comparingByValue((a, b) -> b - a))
-                    .forEach(e -> System.out.printf("- %d (%d раз)\n", e.getKey(), e.getValue()));
-        }
     }
 }
